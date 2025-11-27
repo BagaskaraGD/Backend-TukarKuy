@@ -56,8 +56,8 @@ class UserController extends Controller
 
         $request->validate([
             'name'        => 'required',
-            'no_wa' => 'required|string',
-            'alamat'       => 'required|string',
+            'no_wa' ,
+            'alamat' ,
             'foto_profil' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
 
@@ -69,13 +69,17 @@ class UserController extends Controller
             $User->foto_profil = $request->file('foto_profil')->store('User', 'public');
         }
 
-        $User->update([
+        $updateData = [
             'name'        => $request->name,
             'no_wa' => $request->no_wa,
             'alamat'       => $request->alamat,
-            'foto_profil' => $User->foto_profil
-            
-        ]);
+        ];
+
+        if ($request->hasFile('foto_profil')) {
+            $updateData['foto_profil'] = $User->foto_profil;
+        }
+
+        $User->update($updateData);
 
         return response()->json([
             'success' => true,

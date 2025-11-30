@@ -30,9 +30,10 @@ class BarangController extends Controller
         $request->validate([
             'nama_bar'        => 'required',
             'deskripsi_bar' => 'required|string',
-            'foto_bar' ,
             'stok_bar'       => 'required',
-            'kondisi'        => 'required'
+            'foto_bar',
+            'kondisi'        => 'required',
+            'id_kategori'   => 'required',
         ]);
 
         $foto_barPath = null;
@@ -48,7 +49,8 @@ class BarangController extends Controller
             'stok_bar'       => $request->stok_bar,
             'created_at'       => $request->created_at,
             'updated_at'       => $request->updated_at,
-            'kondisi'        => $request->kondisi
+            'kondisi'        => $request->kondisi,
+            'id_kategori'   => $request->id_kategori
 
         ]);
 

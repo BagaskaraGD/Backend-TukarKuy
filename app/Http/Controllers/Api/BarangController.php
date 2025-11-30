@@ -30,9 +30,7 @@ class BarangController extends Controller
         $request->validate([
             'nama_bar'        => 'required',
             'deskripsi_bar' => 'required|string',
-            'foto_bar'       => 'foto_bar|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'created_at',
-            'updated_at',
+            'foto_bar' ,
             'stok_bar'       => 'required',
             'kondisi'        => 'required'
         ]);

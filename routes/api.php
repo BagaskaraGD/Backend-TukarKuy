@@ -18,7 +18,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
     
     // Item Routes
-    Route::apiResource('items', \App\Http\Controllers\Api\ItemController::class);
     Route::apiResource('barang', \App\Http\Controllers\Api\BarangController::class);
     Route::apiResource('user', \App\Http\Controllers\Api\UserController::class);
 });

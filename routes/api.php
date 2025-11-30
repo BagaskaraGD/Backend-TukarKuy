@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\KategoriController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+
 
 // Endpoint publik untuk registrasi dan login
 Route::post('/register', [RegisteredUserController::class, 'store']);
@@ -20,4 +22,5 @@ Route::middleware('auth:sanctum')->group(function () {
     // Item Routes
     Route::apiResource('barang', \App\Http\Controllers\Api\BarangController::class);
     Route::apiResource('user', \App\Http\Controllers\Api\UserController::class);
+    Route::get('kategori', [KategoriController::class, 'index']);
 });

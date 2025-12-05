@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 // Endpoint publik untuk registrasi dan login
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+Route::apiResource('barang', \App\Http\Controllers\Api\BarangController::class);
 
 // Endpoint yang memerlukan otentikasi
 Route::middleware('auth:sanctum')->group(function () {
@@ -20,7 +21,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
     
     // Item Routes
-    Route::apiResource('barang', \App\Http\Controllers\Api\BarangController::class);
+    
     Route::apiResource('user', \App\Http\Controllers\Api\UserController::class);
     Route::get('kategori', [KategoriController::class, 'index']);
 });

@@ -6,6 +6,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 
 class User extends Authenticatable
@@ -48,5 +49,22 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function getFotoProfilUrlAttribute()
+    {
+        if (!$this->foto_profil) {
+            return null;
+        }
+        
+        $baseUrl = config('app.url');
+        $storageUrl = Storage::url($this->foto_profil);
+        
+        // Ensure we don't double-prepend the base URL
+        if (str_starts_with($storageUrl, 'http')) {
+            return $storageUrl;
+        }
+        
+        return rtrim($baseUrl, '/') . $storageUrl;
     }
 }

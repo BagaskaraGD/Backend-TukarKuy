@@ -15,6 +15,12 @@ class BarangController extends Controller
     public function index()
     {
         $Barang = Barang::with('user')->latest()->get();
+        
+        // Add foto_bar_url to each item
+        $Barang->each(function ($item) {
+            $item->foto_bar_url = $item->foto_bar_url;
+        });
+        
         return response()->json([
             'success' => true,
             'message' => 'List Data Barang',
@@ -28,12 +34,12 @@ class BarangController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_bar'        => 'required',
+            'nama_bar'        => 'required|string|max:255',
             'deskripsi_bar' => 'required|string',
-            'stok_bar'       => 'required',
-            'foto_bar',
-            'kondisi'        => 'required',
-            'id_kategori'   => 'required',
+            'stok_bar'       => 'required|integer|min:0',
+            'foto_bar'       => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'kondisi'        => 'required|string|in:Baru,Bekas',
+            'id_kategori'   => 'required|integer|exists:kategori_barangs,id',
         ]);
 
         $foto_barPath = null;
@@ -41,24 +47,37 @@ class BarangController extends Controller
             $foto_barPath = $request->file('foto_bar')->store('Barang', 'public');
         }
 
-        $Barang = Barang::create([
-            'id_pengguna'     => $request->user()->id,
-            'nama_bar'        => $request->nama_bar,
-            'deskripsi_bar' => $request->deskripsi_bar,
-            'foto_bar'       => $foto_barPath,
-            'stok_bar'       => $request->stok_bar,
-            'created_at'       => $request->created_at,
-            'updated_at'       => $request->updated_at,
-            'kondisi'        => $request->kondisi,
-            'id_kategori'   => $request->id_kategori
+        try {
+            $Barang = Barang::create([
+                'id_pengguna'     => $request->user()->id,
+                'nama_bar'        => $request->nama_bar,
+                'deskripsi_bar' => $request->deskripsi_bar,
+                'foto_bar'       => $foto_barPath,
+                'stok_bar'       => $request->stok_bar,
+                'kondisi'        => $request->kondisi,
+                'id_kategori'   => $request->id_kategori
+            ]);
 
-        ]);
+            // Add foto_bar_url to response
+            $Barang->foto_bar_url = $Barang->foto_bar_url;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Barang Created Successfully',
-            'data'    => $Barang
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Barang Created Successfully',
+                'data'    => $Barang
+            ], 201);
+        } catch (\Exception $e) {
+            // Delete uploaded file if database insertion fails
+            if ($foto_barPath) {
+                Storage::disk('public')->delete($foto_barPath);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create barang: ' . $e->getMessage(),
+                'errors' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -74,6 +93,9 @@ class BarangController extends Controller
                 'message' => 'Barang Not Found',
             ], 404);
         }
+
+        // Add foto_bar_url
+        $Barang->foto_bar_url = $Barang->foto_bar_url;
 
         return response()->json([
             'success' => true,
@@ -105,13 +127,12 @@ class BarangController extends Controller
         }
 
         $request->validate([
-            'nama_bar'        => 'required',
+            'nama_bar'        => 'required|string|max:255',
             'deskripsi_bar' => 'required|string',
-            'foto_bar'       => 'foto_bar|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'created_at',
-            'updated_at',
-            'stok_bar'       => 'required',
-            'kondisi'        => 'required'
+            'foto_bar'       => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'stok_bar'       => 'required|integer|min:0',
+            'kondisi'        => 'required|string|in:Baru,Bekas',
+            'id_kategori'   => 'required|integer|exists:kategori_barangs,id',
         ]);
 
         if ($request->hasFile('foto_bar')) {
@@ -126,11 +147,12 @@ class BarangController extends Controller
             'nama_bar'        => $request->nama_bar,
             'deskripsi_bar' => $request->deskripsi_bar,
             'foto_bar'       => $Barang->foto_bar,
-            'created_at'       => $request->created_at,
-            'updated_at'       => $request->updated_at,
             'stok_bar'       => $request->stok_bar,
             'kondisi'        => $request->kondisi
         ]);
+
+        // Add foto_bar_url to response
+        $Barang->foto_bar_url = $Barang->foto_bar_url;
 
         return response()->json([
             'success' => true,

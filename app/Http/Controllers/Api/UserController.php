@@ -9,16 +9,22 @@ use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
-    public function index()
+public function index()
     {
         $User = User::latest()->get();
+        
+        // Add foto_profil_url to each user
+        $User->each(function ($user) {
+            $user->foto_profil_url = $user->foto_profil_url;
+        });
+        
         return response()->json([
             'success' => true,
             'message' => 'List Data User',
             'data'    => $User
         ], 200);
     }
-    public function show(string $id)
+public function show(string $id)
     {
         $User = User::find($id);
 
@@ -28,6 +34,9 @@ class UserController extends Controller
                 'message' => 'User Not Found',
             ], 404);
         }
+
+        // Add foto_profil_url
+        $User->foto_profil_url = $User->foto_profil_url;
 
         return response()->json([
             'success' => true,
@@ -79,7 +88,10 @@ class UserController extends Controller
             $updateData['foto_profil'] = $User->foto_profil;
         }
 
-        $User->update($updateData);
+$User->update($updateData);
+
+        // Add foto_profil_url to response
+        $User->foto_profil_url = $User->foto_profil_url;
 
         return response()->json([
             'success' => true,

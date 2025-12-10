@@ -23,12 +23,18 @@ class Barang extends Model
         'kondisi',
         'id_kategori'
     ];
+
+    public function barangs()
+        {
+            return $this->hasMany(Barang::class, 'id_pengguna');
+        }
     
 
-public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    public function user()
+        {
+            return $this->belongsTo(User::class, 'id_pengguna');
+        }
+
 
     public function getFotoBarUrlAttribute()
     {

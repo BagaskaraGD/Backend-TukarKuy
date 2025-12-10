@@ -17,7 +17,8 @@ class Transaksi_Barter extends Model
         'barang_pemohon',
         'status_barter',
         'tanggal_pengajuan',
-        'tanggal_selesai'
+        'tanggal_selesai',
+        'id_meetup_spot'
     ];
     
 }

@@ -14,7 +14,6 @@ class Transaksi_Barter extends Model
         'id_pemohon',
         'id_pemilik',
         'id_barang_pemilik',
-        'barang_pemohon',
         'status_barter',
         'tanggal_pengajuan',
         'tanggal_selesai',

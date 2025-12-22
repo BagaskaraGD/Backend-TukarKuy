@@ -27,4 +27,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('kategori', [KategoriController::class, 'index']);
     Route::get('meetupspot', [MeetupSpotController::class, 'index']);
     Route::apiResource('barang', \App\Http\Controllers\Api\BarangController::class);
+    Route::apiResource('transaksi', \App\Http\Controllers\Api\TransaksiController::class);
 });

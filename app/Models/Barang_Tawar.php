@@ -12,6 +12,11 @@ class Barang_Tawar extends Model
     
     protected $fillable = [
         'id_transaksi',
-        'id_barang'
+        'id_barang',
+        'qty'
     ];
+    public function barang()
+    {
+        return $this->belongsTo(Barang::class, 'id_barang');
+    }
 }

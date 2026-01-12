@@ -26,21 +26,32 @@ class TransaksiController extends Controller
                 ], 401);
             }
 
-            $userId = $request->user()->id;
+            $user = $request->user();
+            $userId = $user->id;
+            $isAdmin = $user->email === 'admin@gmail.com';
 
-            $transaksi = Transaksi_Barter::with([
+            $query = Transaksi_Barter::with([
                 'barang_pemilik',
                 'meetup_spot',
                 'pemilik:id,name,email,no_wa,alamat',
                 'pemohon:id,name,email,no_wa,alamat',
                 'barang_tawar.barang'
-            ])
-            ->where(function($query) use ($userId) {
-                $query->where('id_pemilik', $userId)
-                      ->orWhere('id_pemohon', $userId);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ])->orderBy('created_at', 'desc');
+
+            // Jika bukan admin, batasi transaksi milik user
+            if (!$isAdmin) {
+                $query->where(function ($q) use ($userId) {
+                    $q->where('id_pemilik', $userId)
+                        ->orWhere('id_pemohon', $userId);
+                });
+            }
+
+            // Filter status jika ada
+            if ($request->filled('status')) {
+                $query->where('status_barter', $request->status);
+            }
+
+            $transaksi = $query->get();
 
             $transformedData = $transaksi->map(function ($item) {
                 return [
@@ -48,6 +59,7 @@ class TransaksiController extends Controller
                     'id_pemilik' => $item->id_pemilik,
                     'id_barang_pemilik' => $item->id_barang_pemilik,
                     'id_meetup_spot' => $item->id_meetup_spot,
+                    'tgl_barter' => $item->tgl_barter,
                     'status' => $item->status_barter,
                     'created_at' => $item->created_at->toISOString(),
                     'updated_at' => $item->updated_at->toISOString(),
@@ -74,7 +86,6 @@ class TransaksiController extends Controller
                 'message' => 'Success',
                 'data' => $transformedData
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to fetch transactions',
@@ -83,12 +94,13 @@ class TransaksiController extends Controller
         }
     }
 
-public function store(Request $request)
+    public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'id_pemilik' => 'required|exists:users,id',
             'id_barang_pemilik' => 'required|exists:barangs,id',
             'id_meetup_spot' => 'required|exists:meetup_spots,id',
+            'tgl_barter' => 'required',
             'barang_tawar' => 'required|array|min:1',
             'barang_tawar.*' => 'exists:barangs,id',
             'qty' => 'required|array|min:1',
@@ -117,7 +129,7 @@ public function store(Request $request)
             // Validasi setiap barang tawar
             foreach ($request->barang_tawar as $index => $idBarang) {
                 $barang = Barang::find($idBarang);
-                
+
                 // Cek kepemilikan barang
                 if ($barang->id_pengguna !== $request->user()->id) {
                     DB::rollBack();
@@ -126,7 +138,7 @@ public function store(Request $request)
                         'message' => 'Barang ' . $barang->nama_bar . ' bukan milik Anda'
                     ], 422);
                 }
-                
+
                 // Cek stok tersedia
                 if ($request->qty[$index] > $barang->stok_bar) {
                     DB::rollBack();
@@ -144,6 +156,7 @@ public function store(Request $request)
                 'id_barang_pemilik' => $request->id_barang_pemilik,
                 'status_barter' => 'menunggu_konfirmasi',
                 'tanggal_pengajuan' => now(),
+                'tgl_barter' => $request->tgl_barter,
                 'id_meetup_spot' => $request->id_meetup_spot,
             ]);
 
@@ -163,7 +176,6 @@ public function store(Request $request)
                 'message' => 'Transaksi berhasil diajukan',
                 'data' => $transaksi->load('barang_tawar.barang')
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -192,11 +204,11 @@ public function store(Request $request)
                 'pemilik:id,name,email,no_wa,alamat',
                 'pemohon:id,name,email,no_wa,alamat',
                 'barang_tawar.barang'
-            ])->where(function($query) use ($userId) {
+            ])->where(function ($query) use ($userId) {
                 $query->where('id_pemilik', $userId)
                     ->orWhere('id_pemohon', $userId);
             })
-            ->find($id);
+                ->find($id);
             if (!$transaksi) {
                 return response()->json([
                     'message' => 'Transaksi tidak ditemukan',
@@ -213,6 +225,7 @@ public function store(Request $request)
                 'created_at' => $transaksi->created_at->toISOString(),
                 'updated_at' => $transaksi->updated_at->toISOString(),
                 'barang_pemilik' => $transaksi->barang_pemilik,
+                'tgl_barter' => $transaksi->tgl_barter,
                 'meetup_spot' => $transaksi->meetup_spot,
                 'pemilik' => $transaksi->pemilik,
                 'pemohon' => $transaksi->pemohon,  // Ini pembeli!
@@ -245,26 +258,89 @@ public function store(Request $request)
     public function update(Request $request, $id)
     {
         try {
-        $transaksi = Transaksi_Barter::find($id);
-        
-        if (!$transaksi) {
+            $transaksi = Transaksi_Barter::find($id);
+
+            if (!$transaksi) {
+                return response()->json([
+                    'message' => 'Transaksi tidak ditemukan'
+                ], 404);
+            }
+            $validated = $request->validate([
+                'status' => 'required|string|in:menunggu_konfirmasi,disepakati,berhasil,gagal,ditolak,batal'
+            ]);
+            $transaksi->update([
+                'status_barter' => $validated['status']
+            ]);
             return response()->json([
-                'message' => 'Transaksi tidak ditemukan'
-            ], 404);
-        }
-         $validated = $request->validate([
-            'status' => 'required|string|in:menunggu_konfirmasi,disepakati,berhasil,gagal,ditolak,batal'
-        ]);
-        $transaksi->update([
-            'status_barter' => $validated['status']
-        ]);
-        return response()->json([
-            'message' => 'Status berhasil diperbarui',
-            'data' => $transaksi
-        ], 200);
+                'message' => 'Status berhasil diperbarui',
+                'data' => $transaksi
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal memperbarui status',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    // --- METHOD BARU: VERIFIKASI AKHIR (UPLOAD FOTO + STATUS) ---
+    public function verifikasiAkhir(Request $request, $id)
+    {
+        try {
+            $transaksi = Transaksi_Barter::find($id);
+
+            if (!$transaksi) {
+                return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
+            }
+
+            // Validasi Input
+            $validator = Validator::make($request->all(), [
+                'status' => 'required|string|in:selesai,gagal_transaksi',
+                // Bukti transaksi wajib ada jika status selesai, boleh null jika gagal
+                'bukti_transaksi' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'keterangan' => 'nullable|string'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Handle Upload Foto
+            if ($request->hasFile('bukti_transaksi')) {
+                // Hapus foto lama jika ada (opsional)
+                if ($transaksi->bukti_transaksi && Storage::disk('public')->exists($transaksi->bukti_transaksi)) {
+                    Storage::disk('public')->delete($transaksi->bukti_transaksi);
+                }
+
+                $file = $request->file('bukti_transaksi');
+                $path = $file->store('bukti_transaksi', 'public'); // Simpan di storage/app/public/bukti_transaksi
+                $transaksi->bukti_transaksi = $path;
+            }
+
+            // Update Status dan Keterangan
+            $transaksi->status_barter = $request->status;
+
+            if ($request->filled('keterangan')) {
+                $transaksi->keterangan = $request->keterangan;
+            }
+
+            // Set Tanggal Selesai
+            $transaksi->tanggal_selesai = now();
+
+            $transaksi->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Verifikasi akhir berhasil disimpan',
+                'data' => $transaksi
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan server',
                 'error' => $e->getMessage()
             ], 500);
         }

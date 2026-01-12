@@ -50,4 +50,23 @@ class NewPasswordController extends Controller
 
         return response()->json(['status' => __($status)]);
     }
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        // 1. Validate the email
+        $request->validate(['email' => 'required|email']);
+        // 2. Send the password reset link
+        // We use Laravel's built-in Password broker to handle token generation and emailing.
+        $status = Password::sendResetLink($request->only('email'));
+        // 3. Return response based on result
+        if ($status === Password::RESET_LINK_SENT) {
+            return response()->json([
+                'success' => true,
+                'message' => __($status) // "We have emailed your password reset link!"
+            ], 200);
+        }
+        return response()->json([
+            'success' => false,
+            'message' => __($status) // e.g., "We can't find a user with that email address."
+        ], 400); // Or 422 Unprocessable Entity
+    }
 }

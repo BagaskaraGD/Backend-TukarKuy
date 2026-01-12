@@ -17,7 +17,10 @@ class Transaksi_Barter extends Model
         'status_barter',
         'tanggal_pengajuan',
         'tanggal_selesai',
-        'id_meetup_spot'
+        'id_meetup_spot',
+        "tgl_barter",
+        "bukti_transaksi",
+        "keterangan"
     ];
     
     public function barang_tawar()

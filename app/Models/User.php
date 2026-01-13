@@ -25,7 +25,8 @@ class User extends Authenticatable
         'password',
         'no_wa',
         'alamat',
-        'foto_profil'
+        'foto_profil',
+        'role'
     ];
 
     /**

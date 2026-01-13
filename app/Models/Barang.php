@@ -21,7 +21,8 @@ class Barang extends Model
         'id_pengguna',
         'stok_bar',
         'kondisi',
-        'id_kategori'
+        'id_kategori',
+        'mode_transaksi'
     ];
 
     public function barangs()

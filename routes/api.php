@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\DonasiAdminController;
 use App\Http\Controllers\Api\BarangController;
+use App\Http\Controllers\Api\DonasiController;
 use App\Http\Controllers\Api\KategoriController;
 use App\Http\Controllers\Api\MeetupSpotController;
 use App\Http\Controllers\Api\TransaksiController;
@@ -23,9 +25,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::get('/admin/donasi', [DonasiAdminController::class, 'index']);
+    Route::put('/admin/donasi/{id}', [DonasiAdminController::class, 'updateStatus']);
     
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
-    
+    Route::post('/donasi', [DonasiController::class, 'ajukanDonasi']);
+    Route::get('/donasi/riwayat', [DonasiController::class, 'riwayatDonasi']);
     // Item Routes
     Route::post('/barang', [BarangController::class, 'store']);
     Route::put('/barang/{id}', [BarangController::class, 'update']);

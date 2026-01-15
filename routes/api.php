@@ -25,11 +25,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    Route::get('/admin/donasi', [DonasiAdminController::class, 'index']);
-    Route::put('/admin/donasi/{id}', [DonasiAdminController::class, 'updateStatus']);
+
+    // Admin Routes
+    Route::middleware('isAdmin')->group(function () {
+        Route::get('/admin/donasi', [DonasiAdminController::class, 'index']);
+        Route::put('/admin/donasi/{id}', [DonasiAdminController::class, 'updateStatus']);
+    });
     
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
-    Route::post('/donasi', [DonasiController::class, 'ajukanDonasi']);
+    // Route::post('/donasi', [DonasiController::class, 'ajukanDonasi']); // Deprecated: Use POST /barang with mode_transaksi=donasi
     Route::get('/donasi/riwayat', [DonasiController::class, 'riwayatDonasi']);
     // Item Routes
     Route::post('/barang', [BarangController::class, 'store']);

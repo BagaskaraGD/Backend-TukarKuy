@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Donasi;
 use App\Models\Barang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DonasiAdminController extends Controller
 {
@@ -19,10 +20,19 @@ class DonasiAdminController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:DISETUJUI_ADMIN,DIJADWALKAN,BERHASIL_DISALURKAN,DITOLAK'
+            'status' => 'required|in:DISETUJUI_ADMIN,DIJADWALKAN,BERHASIL_DISALURKAN,DITOLAK',
+            'bukti_foto' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
 
         $donasi = Donasi::findOrFail($id);
+
+        if ($request->hasFile('bukti_foto')) {
+             if ($donasi->bukti_foto) {
+                Storage::disk('public')->delete($donasi->bukti_foto);
+            }
+            $donasi->bukti_foto = $request->file('bukti_foto')->store('BuktiDonasi', 'public');
+        }
+
         $donasi->status = $request->status;
         $donasi->save();
 

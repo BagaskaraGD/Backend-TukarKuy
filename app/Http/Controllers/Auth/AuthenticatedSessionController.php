@@ -22,6 +22,8 @@ class AuthenticatedSessionController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        \Illuminate\Support\Facades\Log::info("User Login: {$user->email} | Role: {$user->role}");
+
         return response()->json([
             'token' => $token,
             'token_type' => 'Bearer',

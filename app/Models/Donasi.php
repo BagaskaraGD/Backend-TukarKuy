@@ -14,6 +14,22 @@ class Donasi extends Model
         'meetup_spot_id',
         'tujuan_donasi',
         'jadwal',
-        'status'
+        'status',
+        'bukti_foto'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function barang()
+    {
+        return $this->belongsTo(Barang::class);
+    }
+
+    public function meetupSpot()
+    {
+        return $this->belongsTo(Meetup_Spot::class, 'meetup_spot_id');
+    }
 }

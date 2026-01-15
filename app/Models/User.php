@@ -68,4 +68,17 @@ class User extends Authenticatable
         
         return rtrim($baseUrl, '/') . $storageUrl;
     }
+
+    /**
+     * Check if the user is an admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function donasi()
+    {
+        return $this->hasMany(Donasi::class);
+    }
 }

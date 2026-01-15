@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
+use App\Models\Donasi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class BarangController extends Controller
@@ -14,7 +16,10 @@ class BarangController extends Controller
      */
     public function index()
     {
-        $Barang = Barang::with('user')->latest()->get();
+        $Barang = Barang::with('user')
+            ->where('mode_transaksi', 'barter')
+            ->latest()
+            ->get();
         
         // Add foto_bar_url to each item
         $Barang->each(function ($item) {
@@ -40,7 +45,16 @@ class BarangController extends Controller
             'foto_bar'       => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'kondisi'        => 'required|string|in:Baru,Bekas',
             'id_kategori'   => 'required|integer|exists:kategori_barangs,id',
+            'mode_transaksi' => 'required|in:barter,donasi',
         ]);
+
+        if ($request->mode_transaksi === 'donasi') {
+            $request->validate([
+                'tujuan_donasi' => 'required|string',
+                'meetup_spot_id' => 'required|exists:meetup_spots,id',
+                'jadwal' => 'required|date'
+            ]);
+        }
 
         $foto_barPath = null;
         if ($request->hasFile('foto_bar')) {
@@ -48,6 +62,8 @@ class BarangController extends Controller
         }
 
         try {
+            DB::beginTransaction();
+
             $Barang = Barang::create([
                 'id_pengguna'     => $request->user()->id,
                 'nama_bar'        => $request->nama_bar,
@@ -55,8 +71,23 @@ class BarangController extends Controller
                 'foto_bar'       => $foto_barPath,
                 'stok_bar'       => $request->stok_bar,
                 'kondisi'        => $request->kondisi,
-                'id_kategori'   => $request->id_kategori
+                'id_kategori'   => $request->id_kategori,
+                'mode_transaksi' => $request->mode_transaksi
             ]);
+
+            // Jika mode donasi, buat record donasi
+            if ($request->mode_transaksi === 'donasi') {
+                Donasi::create([
+                    'user_id' => $request->user()->id,
+                    'barang_id' => $Barang->id,
+                    'tujuan_donasi' => $request->tujuan_donasi,
+                    'meetup_spot_id' => $request->meetup_spot_id,
+                    'jadwal' => $request->jadwal,
+                    'status' => 'MENUNGGU_VERIFIKASI'
+                ]);
+            }
+
+            DB::commit();
 
             // Add foto_bar_url to response
             $Barang->foto_bar_url = $Barang->foto_bar_url;
@@ -67,6 +98,8 @@ class BarangController extends Controller
                 'data'    => $Barang
             ], 201);
         } catch (\Exception $e) {
+            DB::rollBack();
+
             // Delete uploaded file if database insertion fails
             if ($foto_barPath) {
                 Storage::disk('public')->delete($foto_barPath);
@@ -133,6 +166,7 @@ class BarangController extends Controller
             'stok_bar'       => 'required|integer|min:0',
             'kondisi'        => 'required|string|in:Baru,Bekas',
             'id_kategori'   => 'required|integer|exists:kategori_barangs,id',
+            'mode_transaksi' => 'required|in:barter,donasi',
         ]);
 
         if ($request->hasFile('foto_bar')) {
@@ -148,7 +182,8 @@ class BarangController extends Controller
             'deskripsi_bar' => $request->deskripsi_bar,
             'foto_bar'       => $Barang->foto_bar,
             'stok_bar'       => $request->stok_bar,
-            'kondisi'        => $request->kondisi
+            'kondisi'        => $request->kondisi,
+            'mode_transaksi' => $request->mode_transaksi
         ]);
 
         // Add foto_bar_url to response

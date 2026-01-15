@@ -15,7 +15,7 @@ class DonasiController extends Controller
     public function ajukanDonasi(Request $request)
     {
         $request->validate([
-            'barang_id' => 'required|exists:barang,id',
+            'barang_id' => 'required|exists:barangs,id',
             'tujuan_donasi' => 'required|string',
             'meetup_spot_id' => 'required|exists:meetup_spots,id',
             'jadwal' => 'required|date'
